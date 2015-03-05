@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.codehaus.sonar-plugins</groupId>
     <artifactId>parent</artifactId>
-    <version>9</version>
+    <version>19</version>
   </parent>
 
   <groupId>org.example</groupId>
@@ -46,7 +46,7 @@
     <dependency>
       <groupId>org.codenarc</groupId>
       <artifactId>CodeNarc</artifactId>
-      <version>0.20</version>
+      <version>0.23</version>
       <exclusions>
         <exclusion>
           <groupId>log4j</groupId>
