@@ -23,6 +23,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.IOUtils;
 import org.codenarc.rule.AbstractRule;
+import org.sonar.plugins.groovy.codenarc.apt.AptParser;
+import org.sonar.plugins.groovy.codenarc.apt.AptResult;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,12 +45,18 @@ public class Converter {
   private static int count;
   private static Map<String, Integer> rulesByVersion;
   private static Map<String, Integer> rulesByCategory;
+  private static Map<String, AptResult> parametersByRule;
 
   private static final String RESULTS_FOLDER = "target/results";
+  /**
+   * location of the apt files in the codenarc project
+   */
+  private static final String RULES_APT_FILES_LOCATION = "../../CodeNarc/src/site/apt";
 
   public Converter() throws Exception {
     rulesByVersion = Maps.newHashMap();
     rulesByCategory = Maps.newHashMap();
+    parametersByRule = retrieveRulesParameters();
 
     File rules = setUpRulesFile();
 
@@ -57,6 +65,24 @@ public class Converter {
     out.println("<!-- Generated using CodeNarc " + version + " -->");
 
     props.load(Converter.class.getResourceAsStream("/codenarc-base-messages.properties"));
+  }
+
+  private Map<String, AptResult> retrieveRulesParameters() throws Exception {
+    return new AptParser().parse(getRulesAptFile());
+  }
+
+  private List<File> getRulesAptFile() {
+    File aptDir = new File(RULES_APT_FILES_LOCATION);
+    List<File> rulesAptFiles = Lists.newArrayList();
+    if (aptDir.exists() && aptDir.isDirectory()) {
+      File[] files = aptDir.listFiles();
+      for (File file : files) {
+        if (file.getName().startsWith("codenarc-rules-")) {
+          rulesAptFiles.add(file);
+        }
+      }
+    }
+    return rulesAptFiles;
   }
 
   private File setUpRulesFile() throws IOException {
@@ -81,7 +107,7 @@ public class Converter {
       duplications.add(ruleClass);
     }
 
-    Rule rule = new Rule(ruleClass, since, props);
+    Rule rule = new Rule(ruleClass, since, props, parametersByRule);
     rule.printAsXml(out);
 
     updateCounters(rule);
@@ -89,13 +115,13 @@ public class Converter {
 
   private void updateCounters(Rule rule) {
     count++;
-    Integer nbByCategory = rulesByCategory.get(rule.tag);
+    Integer nbByCategory = rulesByCategory.get(rule.getTag());
     if (nbByCategory == null) {
       nbByCategory = 0;
     }
-    rulesByCategory.put(rule.tag, nbByCategory + 1);
+    rulesByCategory.put(rule.getTag(), nbByCategory + 1);
 
-    String version = rule.version == null ? "legacy" : rule.version;
+    String version = rule.getVersion() == null ? "legacy" : rule.getVersion();
     Integer nbByVersion = rulesByVersion.get(version);
     if (nbByVersion == null) {
       nbByVersion = 0;
