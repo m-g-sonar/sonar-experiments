@@ -156,7 +156,8 @@ public class AptParser {
   }
 
   private String getParagraphLine(AptResult currentResult, String line) {
-    return (StringUtils.isNotBlank(line) && currentResult.description.endsWith("\n") || StringUtils.isBlank(currentResult.description) ? "<p>" : "") + cleanDescription(line, true)
+    return (StringUtils.isNotBlank(line) && currentResult.description.endsWith("\n") || StringUtils.isBlank(currentResult.description) ? "<p>" : "")
+      + cleanDescription(line, false)
       + " ";
   }
 
@@ -184,17 +185,23 @@ public class AptParser {
     String result = description;
     if (!isForParameter) {
       result = result.replaceAll("<<<", "<code>");
+      result = result.replaceAll("<<", "<code>");
       result = result.replaceAll(">>>", "</code>");
+      result = result.replaceAll(">>", "</code>");
     } else {
       result = result.replaceAll("<<<", "");
+      result = result.replaceAll("<<", "");
       result = result.replaceAll(">>>", "");
+      result = result.replaceAll(">>", "");
     }
     return result;
   }
 
   private String cleanDefaultValue(String defaultValue) {
     String result = defaultValue.replaceAll("<<<", "");
+    result = result.replaceAll("<<", "");
     result = result.replaceAll(">>>", "");
+    result = result.replaceAll(">>", "");
     if ((result.startsWith("'") && result.endsWith("'")) || (result.startsWith("<") && result.endsWith(">"))) {
       result = result.substring(1, result.length() - 1);
     }
