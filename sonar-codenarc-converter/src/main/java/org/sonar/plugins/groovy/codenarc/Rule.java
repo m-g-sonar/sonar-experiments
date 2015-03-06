@@ -42,22 +42,27 @@ public class Rule {
   private String description;
   private String severity;
   private String version;
-  private String tag;
+  private Set<String> tags;
   private Set<RuleParameter> parameters;
 
   public Rule(Class<? extends AbstractRule> ruleClass, String since, Properties props, Map<String, AptResult> parametersByRule) throws Exception {
     rule = ruleClass.newInstance();
     key = ruleClass.getCanonicalName();
     internalKey = StringUtils.removeEnd(ruleClass.getSimpleName(), "Rule");
-    name = StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(internalKey), ' ');
+    name = cleanName(internalKey);
     severity = severity(rule.getPriority());
-    tag = getTag(ruleClass.getCanonicalName());
+    tags = getTags(key, internalKey);
     version = since;
 
     AptResult dataFromAptFile = parametersByRule.get(internalKey);
     String descriptionFromProperty = props.getProperty(internalKey + ".description.html");
     description = extractDescription(dataFromAptFile, descriptionFromProperty);
     parameters = extractParameters(dataFromAptFile, descriptionFromProperty);
+  }
+
+  private String cleanName(String internalKey) {
+    String result = StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(internalKey), ' ');
+    return result.replace("J Unit", "JUnit");
   }
 
   private Set<RuleParameter> extractParameters(AptResult results, String description) {
@@ -149,9 +154,76 @@ public class Rule {
     }
   }
 
-  private String getTag(String canonicalName) {
-    String[] split = canonicalName.split("\\.");
-    return split[split.length - 2];
+  private Set<String> getTags(String key, String internalKey) {
+    String[] split = key.split("\\.");
+    String codeNarcCategory = split[split.length - 2];
+    Set<String> results = Sets.newHashSet();
+
+    switch (codeNarcCategory) {
+      case "unnecessary":
+        results.add("clumsy");
+        break;
+      case "formatting":
+      case "naming ":
+        results.add("convention");
+        break;
+      case "concurrency":
+        results.add("multi-threading");
+        break;
+      case "exceptions":
+        results.add("error-handling");
+        break;
+      case "basic":
+        results.addAll(handleBasicCategory(internalKey));
+        break;
+      case "grails":
+      case "goovyism":
+      case "junit":
+      case "design":
+        results.add(codeNarcCategory);
+        break;
+      default:
+        results.add("bug");
+        break;
+    }
+    return results;
+  }
+
+  private Set<String> handleBasicCategory(String internalKey) {
+    Set<String> results = Sets.newHashSet();
+    if (internalKey.startsWith("Empty")) {
+      results.add("unused");
+    } else if (internalKey.startsWith("Broken")) {
+      results.add("bug");
+    } else if (internalKey.startsWith("Equals")) {
+      results.add("pitfall");
+    } else if (internalKey.contains("Get") && !internalKey.startsWith("Get")) {
+      results.add("bug");
+    } else if (internalKey.endsWith("FinallyBlock")) {
+      results.add("error-handling");
+    } else {
+      results.addAll(handleParticularCases(internalKey));
+    }
+    return results;
+  }
+
+  private Set<String> handleParticularCases(String internalKey) {
+    Set<String> results = Sets.newHashSet();
+    if (internalKey.equals("DeadCode")) {
+      results.add("unused");
+    } else if (internalKey.equals("ExplicitGarbageCollection")) {
+      results.add("unpredictable");
+    } else if (internalKey.equals("HardCodedWindowsFileSeparator") || internalKey.equals("HardCodedWindowsRootDirectory")) {
+      results.add("pitfall");
+    } else if (internalKey.equals("ForLoopShouldBeWhileLoop")) {
+      results.add("clumsy");
+    } else if (internalKey.equals("ClassForName")) {
+      results.add("leak");
+      results.add("owasp-a1");
+    } else {
+      results.add("bug");
+    }
+    return results;
   }
 
   private String cleanDescription(String description) {
@@ -228,7 +300,11 @@ public class Rule {
     out.println("    <name><![CDATA[" + name + "]]></name>");
     out.println("    <internalKey><![CDATA[" + internalKey + "]]></internalKey>");
     out.println("    <description><![CDATA[" + description + "]]></description>");
-    out.println("    <tag>" + tag + "</tag>");
+    if (!tags.isEmpty()) {
+      for (String tag : tags) {
+        out.println("    <tag>" + tag + "</tag>");
+      }
+    }
 
     if (!parameters.isEmpty()) {
       for (RuleParameter parameter : parameters) {
@@ -252,7 +328,7 @@ public class Rule {
     return version;
   }
 
-  public String getTag() {
-    return tag;
+  public Set<String> getTags() {
+    return tags;
   }
 }

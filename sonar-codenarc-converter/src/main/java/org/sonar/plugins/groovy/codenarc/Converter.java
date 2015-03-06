@@ -44,7 +44,7 @@ public class Converter {
   private PrintStream out;
   private static int count;
   private static Map<String, Integer> rulesByVersion;
-  private static Map<String, Integer> rulesByCategory;
+  private static Map<String, Integer> rulesByTags;
   private static Map<String, AptResult> parametersByRule;
 
   private static final String RESULTS_FOLDER = "target/results";
@@ -55,7 +55,7 @@ public class Converter {
 
   public Converter() throws Exception {
     rulesByVersion = Maps.newHashMap();
-    rulesByCategory = Maps.newHashMap();
+    rulesByTags = Maps.newHashMap();
     parametersByRule = retrieveRulesParameters();
 
     File rules = setUpRulesFile();
@@ -115,11 +115,13 @@ public class Converter {
 
   private void updateCounters(Rule rule) {
     count++;
-    Integer nbByCategory = rulesByCategory.get(rule.getTag());
-    if (nbByCategory == null) {
-      nbByCategory = 0;
+    for (String tag : rule.getTags()) {
+      Integer nbByTag = rulesByTags.get(tag);
+      if (nbByTag == null) {
+        nbByTag = 0;
+      }
+      rulesByTags.put(tag, nbByTag + 1);
     }
-    rulesByCategory.put(rule.getTag(), nbByCategory + 1);
 
     String version = rule.getVersion() == null ? "legacy" : rule.getVersion();
     Integer nbByVersion = rulesByVersion.get(version);
@@ -204,10 +206,10 @@ public class Converter {
 
   private static void resultsByCategory() {
     System.out.println("Rules by category:");
-    List<String> categories = Lists.newArrayList(rulesByCategory.keySet());
+    List<String> categories = Lists.newArrayList(rulesByTags.keySet());
     Collections.sort(categories);
     for (String category : categories) {
-      System.out.println("  - " + category + " : " + rulesByCategory.get(category));
+      System.out.println("  - " + category + " : " + rulesByTags.get(category));
     }
   }
 
