@@ -28,6 +28,8 @@ import org.sonar.plugins.groovy.codenarc.apt.AptResult;
 
 import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -177,7 +179,7 @@ public class Rule {
         results.addAll(handleBasicCategory(internalKey));
         break;
       case "grails":
-      case "goovyism":
+      case "groovyism":
       case "junit":
       case "design":
         results.add(codeNarcCategory);
@@ -307,7 +309,14 @@ public class Rule {
     }
 
     if (!parameters.isEmpty()) {
-      for (RuleParameter parameter : parameters) {
+      List<RuleParameter> sortedParameters = Lists.newArrayList(parameters);
+      Collections.sort(sortedParameters, new Comparator<RuleParameter>() {
+        @Override
+        public int compare(RuleParameter o1, RuleParameter o2) {
+          return o1.key.compareTo(o2.key);
+        }
+      });
+      for (RuleParameter parameter : sortedParameters) {
         out.println("    <param>");
         out.println("      <key>" + parameter.key + "</key>");
         if (StringUtils.isNotBlank(parameter.description)) {
