@@ -3,6 +3,7 @@ package org.sonar.plugins.findbugs;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -13,9 +14,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Deprecater {
 
@@ -63,7 +67,11 @@ public class Deprecater {
           String findbugsRule = split[0];
           String squidRules = split[1];
           if (squidRules.contains(",")) {
-            results.putAll(findbugsRule, Arrays.asList(squidRules.split(",")));
+            Set<String> ruleNames = Sets.newHashSet();
+            for (String ruleName : squidRules.split(",")) {
+              ruleNames.add(ruleName.trim());
+            }
+            results.putAll(findbugsRule, ruleNames);
           } else {
             results.put(findbugsRule, squidRules);
           }
@@ -147,9 +155,12 @@ public class Deprecater {
   private static String formatRules(Collection<String> rules) {
     String result = "";
     String separator = "";
-    for (String rule : rules) {
+
+    List<String> OrderedRules = new ArrayList<String>(rules);
+    Collections.sort(OrderedRules);
+    for (String rule : OrderedRules) {
       String ruleName = rule;
-      if (rule.startsWith("RSPEC-")) {
+      if (ruleName.startsWith("RSPEC-")) {
         String ruleNumber = rule.substring(6);
         if (ruleNumber.length() == 3) {
           ruleNumber = "00" + ruleNumber;
