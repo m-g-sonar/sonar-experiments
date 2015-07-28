@@ -161,6 +161,7 @@ public class Converter {
   private static final String VERSION_0_21 = "0.21";
   private static final String VERSION_0_22 = "0.22";
   private static final String VERSION_0_23 = "0.23";
+  private static final String VERSION_0_24 = "0.24";
 
   public static void main(String[] args) throws Exception {
     Converter converter = new Converter();
@@ -331,6 +332,8 @@ public class Converter {
     converter.rule(org.codenarc.rule.naming.FactoryMethodNameRule.class, VERSION_0_16);
     converter.rule(org.codenarc.rule.naming.ClassNameSameAsFilenameRule.class, VERSION_0_19);
     converter.rule(org.codenarc.rule.naming.PackageNameMatchesFilePathRule.class, VERSION_0_22);
+    converter.rule(org.codenarc.rule.naming.ClassNameSameAsSuperclassRule.class, VERSION_0_24);
+    converter.rule(org.codenarc.rule.naming.InterfaceNameSameAsSuperInterfaceRule.class, VERSION_0_24);
   }
 
   private static void loggingRuleSet(Converter converter) throws Exception {
@@ -572,6 +575,7 @@ public class Converter {
     converter.rule(org.codenarc.rule.design.ToStringReturnsNullRule.class, VERSION_0_21);
     converter.rule(org.codenarc.rule.design.InstanceofRule.class, VERSION_0_22);
     converter.rule(org.codenarc.rule.design.NestedForLoopRule.class, VERSION_0_23);
+    converter.rule(org.codenarc.rule.design.AssignmentToStaticFieldFromInstanceMethodRule.class, VERSION_0_24);
   }
 
   private static void formattingRuleSet(Converter converter) throws Exception {
