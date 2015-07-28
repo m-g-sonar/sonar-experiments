@@ -292,6 +292,9 @@ public class Rule {
     return urls.toArray(new String[urls.size()]);
   }
 
+  /**
+   * Rule format based on {@link org.sonar.api.server.rule.RulesDefinitionXmlLoader}
+   */
   public void printAsXml(PrintStream out) {
     if (version != null) {
       out.println("  <!-- since " + version + " -->");
@@ -339,5 +342,9 @@ public class Rule {
 
   public Set<String> getTags() {
     return tags;
+  }
+
+  public String getKey() {
+    return key;
   }
 }
