@@ -151,37 +151,38 @@ public class AptParser {
     return results;
   }
 
-  private boolean isExampleSeparator(String line) {
+  private static boolean isExampleSeparator(String line) {
     return line.matches(EXAMPLE_SEPARATOR_1) || line.matches(EXAMPLE_SEPARATOR_2);
   }
 
-  private String getParagraphLine(AptResult currentResult, String line) {
+  private static String getParagraphLine(AptResult currentResult, String line) {
     return (StringUtils.isNotBlank(line) && currentResult.description.endsWith("\n") || StringUtils.isBlank(currentResult.description) ? "<p>" : "")
       + cleanDescription(line, false)
       + " ";
   }
 
-  private boolean isEndOfParagraph(AptResult currentResult, String line) {
+  private static boolean isEndOfParagraph(AptResult currentResult, String line) {
     return StringUtils.isBlank(line) && StringUtils.isNotBlank(currentResult.description) && !currentResult.description.endsWith("</p>\n");
   }
 
-  private boolean isValidDescriptionLine(String line) {
-    return !line.startsWith("<Since")
-      && !line.startsWith("~~~")
-      && !line.startsWith("<New")
-      && !line.startsWith("** ")
-      && !line.startsWith("[]")
-      && !line.startsWith("*----")
-      && !line.startsWith("+----")
-      && !line.startsWith("|")
-      && !isParameterSeparator(line);
+  private static boolean isValidDescriptionLine(String line) {
+    return !startsWith(line, "<Since", "~~~", "<New", "** ", "[]", "*----", "+----", "|") && !isParameterSeparator(line);
   }
 
-  private boolean isParameterSeparator(String line) {
+  private static boolean startsWith(String line, String... prefixes) {
+    for (String prefix : prefixes) {
+      if (line.startsWith(prefix)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean isParameterSeparator(String line) {
     return line.matches(PARAMETER_SEPARATOR) || line.matches(PARAMETER_START_SEPARATOR);
   }
 
-  private String cleanDescription(String description, boolean isForParameter) {
+  private static String cleanDescription(String description, boolean isForParameter) {
     String result = description;
     if (!isForParameter) {
       result = result.replaceAll("<<<", "<code>");
@@ -197,22 +198,28 @@ public class AptParser {
     return result;
   }
 
-  private String cleanDefaultValue(String defaultValue) {
+  private static String cleanDefaultValue(String defaultValue) {
     String result = defaultValue.replaceAll("<<<", "");
     result = result.replaceAll("<<", "");
     result = result.replaceAll(">>>", "");
     result = result.replaceAll(">>", "");
-    if ((result.startsWith("'") && result.endsWith("'")) || (result.startsWith("<") && result.endsWith(">"))) {
+    if (isBetween(result, "'", "'")
+      || isBetween(result, "<", ">")
+      || isBetween(result, "\"", "\"")) {
       result = result.substring(1, result.length() - 1);
     }
     return result;
   }
 
-  private boolean isHeaderLine(String[] blocks) {
+  private static boolean isBetween(String parameter, String prefix, String suffix) {
+    return parameter.startsWith(prefix) && parameter.endsWith(suffix);
+  }
+
+  private static boolean isHeaderLine(String[] blocks) {
     return "<<Property>>".equalsIgnoreCase(blocks[0].trim());
   }
 
-  private String getRuleName(String line) {
+  private static String getRuleName(String line) {
     if (StringUtils.isBlank(line)) {
       return null;
     }
@@ -232,7 +239,7 @@ public class AptParser {
     return result;
   }
 
-  private void mergeParameters(Map<String, AptResult> results, Map<String, AptResult> parametersByFile) {
+  private static void mergeParameters(Map<String, AptResult> results, Map<String, AptResult> parametersByFile) {
     for (String rule : parametersByFile.keySet()) {
       AptResult currentRuleResult = results.get(rule);
       if (currentRuleResult == null) {

@@ -108,7 +108,7 @@ public class RuleParameter {
     }
   }
 
-  private String selectValue(String currentValue, String newValue) {
+  private static String selectValue(String currentValue, String newValue) {
     if (StringUtils.isBlank(currentValue) && StringUtils.isNotBlank(newValue)) {
       return newValue;
     }
