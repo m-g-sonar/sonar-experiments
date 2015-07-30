@@ -205,7 +205,8 @@ public class AptParser {
     result = result.replaceAll(">>", "");
     if (isBetween(result, "'", "'")
       || isBetween(result, "<", ">")
-      || isBetween(result, "\"", "\"")) {
+      || isBetween(result, "\"", "\"")
+      || isBetween(result, "/", "/")) {
       result = result.substring(1, result.length() - 1);
     }
     return result;
