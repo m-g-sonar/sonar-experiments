@@ -26,7 +26,6 @@ import org.apache.commons.lang.StringUtils;
 import org.codenarc.rule.AbstractRule;
 import org.sonar.plugins.groovy.codenarc.apt.AptResult;
 
-import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Comparator;
@@ -68,8 +67,8 @@ public class Rule {
   }
 
   private Set<RuleParameter> extractParameters(AptResult results, String description) {
-    Map<String, RuleParameter> parameters = Maps.newHashMap();
-    addParameters(results, parameters);
+    Map<String, RuleParameter> extractedParameters = Maps.newHashMap();
+    addParameters(results, extractedParameters);
 
     String[] params1 = StringUtils.substringsBetween(description, "<em>", "</em> property");
     if (params1 != null) {
@@ -79,22 +78,22 @@ public class Rule {
           params1[i] = paramName.substring(paramName.lastIndexOf("<em>") + 4);
         }
       }
-      addParameters(params1, rule, parameters);
+      addParameters(params1, rule, extractedParameters);
     }
     String[] params2 = StringUtils.substringsBetween(description, "configured in <em>", "</em>");
     if (params2 != null) {
-      addParameters(params2, rule, parameters);
+      addParameters(params2, rule, extractedParameters);
     }
     if (StringUtils.contains(description, "length property")) {
-      addParameter("length", rule, parameters);
+      addParameter("length", rule, extractedParameters);
     }
     if (StringUtils.contains(description, "sameLine property")) {
-      addParameter("sameLine", rule, parameters);
+      addParameter("sameLine", rule, extractedParameters);
     }
-    return Sets.newHashSet(parameters.values());
+    return Sets.newHashSet(extractedParameters.values());
   }
 
-  private void addParameters(AptResult results, Map<String, RuleParameter> parameters) {
+  private static void addParameters(AptResult results, Map<String, RuleParameter> parameters) {
     if (results.hasParameters()) {
       for (RuleParameter param : results.getParameters()) {
         parameters.put(param.key, param);
@@ -295,19 +294,27 @@ public class Rule {
   /**
    * Rule format based on {@link org.sonar.api.server.rule.RulesDefinitionXmlLoader}
    */
-  public void printAsXml(PrintStream out) {
+  public void printAsXml(StringBuilder xmlStringBuilder) {
     if (version != null) {
-      out.println("  <!-- since " + version + " -->");
+      xmlStringBuilder.append("  <!-- since " + version + " -->");
+      xmlStringBuilder.append(Converter.LINE_SEPARATOR);
     }
-    out.println("  <rule>");
-    out.println("    <key>" + key + "</key>");
-    out.println("    <severity>" + severity + "</severity>");
-    out.println("    <name><![CDATA[" + name + "]]></name>");
-    out.println("    <internalKey><![CDATA[" + internalKey + "]]></internalKey>");
-    out.println("    <description><![CDATA[" + description + "]]></description>");
+    xmlStringBuilder.append("  <rule>");
+    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
+    xmlStringBuilder.append("    <key>" + key + "</key>");
+    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
+    xmlStringBuilder.append("    <severity>" + severity + "</severity>");
+    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
+    xmlStringBuilder.append("    <name><![CDATA[" + name + "]]></name>");
+    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
+    xmlStringBuilder.append("    <internalKey><![CDATA[" + internalKey + "]]></internalKey>");
+    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
+    xmlStringBuilder.append("    <description><![CDATA[" + description + "]]></description>");
+    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
     if (!tags.isEmpty()) {
       for (String tag : tags) {
-        out.println("    <tag>" + tag + "</tag>");
+        xmlStringBuilder.append("    <tag>" + tag + "</tag>");
+        xmlStringBuilder.append(Converter.LINE_SEPARATOR);
       }
     }
 
@@ -320,20 +327,26 @@ public class Rule {
         }
       });
       for (RuleParameter parameter : sortedParameters) {
-        out.println("    <param>");
-        out.println("      <key>" + parameter.key + "</key>");
+        xmlStringBuilder.append("    <param>");
+        xmlStringBuilder.append(Converter.LINE_SEPARATOR);
+        xmlStringBuilder.append("      <key>" + parameter.key + "</key>");
+        xmlStringBuilder.append(Converter.LINE_SEPARATOR);
         if (StringUtils.isNotBlank(parameter.description)) {
-          out.println("      <description><![CDATA[" + parameter.description + "]]></description>");
+          xmlStringBuilder.append("      <description><![CDATA[" + parameter.description + "]]></description>");
+          xmlStringBuilder.append(Converter.LINE_SEPARATOR);
         }
         if (StringUtils.isNotBlank(parameter.defaultValue)) {
-          out.println("      <defaultValue>" + parameter.defaultValue + "</defaultValue>");
+          xmlStringBuilder.append("      <defaultValue>" + parameter.defaultValue + "</defaultValue>");
+          xmlStringBuilder.append(Converter.LINE_SEPARATOR);
         }
-        out.println("    </param>");
+        xmlStringBuilder.append("    </param>");
+        xmlStringBuilder.append(Converter.LINE_SEPARATOR);
       }
     }
 
-    out.println("  </rule>");
-    out.println();
+    xmlStringBuilder.append("  </rule>");
+    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
+    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
   }
 
   public String getVersion() {

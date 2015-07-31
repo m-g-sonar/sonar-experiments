@@ -51,23 +51,29 @@ public class Converter {
    */
   private static final String RULES_APT_FILES_LOCATION = "../../CodeNarc/src/site/apt";
 
+  public static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
   private Set<String> duplications = new HashSet<String>();
-  private PrintStream out;
 
-  private static int count;
-  private static Map<String, Integer> rulesByVersion;
-  private static Map<String, Integer> rulesByTags;
+  private static int count = 0;
+  private static Map<String, Integer> rulesByVersion = Maps.newHashMap();;
+  private static Map<String, Integer> rulesByTags = Maps.newHashMap();
 
-  private Converter() throws Exception {
-    rulesByVersion = Maps.newHashMap();
-    rulesByTags = Maps.newHashMap();
+  public static void main(String[] args) throws Exception {
+    String xml = Converter.convert();
+    
+    PrintStream out = new PrintStream(setUpRulesFile());
+    out.print(xml);
+    out.flush();
+    out.close();
 
-    out = new PrintStream(setUpRulesFile());
-    String version = IOUtils.toString(Converter.class.getResourceAsStream("/codenarc-version.txt"));
-    out.println("<!-- Generated using CodeNarc " + version + " -->");
+    resultsByCategory();
+    resultsByVersion();
+    System.out.println();
+    System.out.println(count + " rules processed");
   }
-
-  private File setUpRulesFile() throws IOException {
+  
+  private static File setUpRulesFile() throws IOException {
     File resultDir = new File(RESULTS_FOLDER);
     resultDir.mkdirs();
 
@@ -79,14 +85,6 @@ public class Converter {
     return rules;
   }
 
-  public static void main(String[] args) throws Exception {
-    Converter.convert(loadRules());
-
-    resultsByCategory();
-    resultsByVersion();
-    System.out.println("\n" + count + " rules processed");
-  }
-  
   private static Multimap<RuleSet, Rule> loadRules() throws Exception {
     Properties props = new Properties();
     props.load(Converter.class.getResourceAsStream("/codenarc-base-messages.properties"));
@@ -507,44 +505,54 @@ public class Converter {
     return rulesAptFiles;
   }
 
-  private static void convert(Multimap<RuleSet, Rule> multimap) throws Exception {
+  public static String convert() throws Exception {
+
+    Multimap<RuleSet, Rule> rulesBySet = loadRules();
+
+    StringBuilder xmlStringBuilder = new StringBuilder();
+
+    String version = IOUtils.toString(Converter.class.getResourceAsStream("/codenarc-version.txt"));
+    xmlStringBuilder.append("<!-- Generated using CodeNarc " + version + " -->");
+    xmlStringBuilder.append(LINE_SEPARATOR);
+
     Converter converter = new Converter();
-    converter.start();
+    start(xmlStringBuilder);
 
     for (RuleSet ruleSet : RuleSet.values()) {
-      converter.startSet(ruleSet.getLabel());
-      ArrayList<Rule> rules = Lists.newArrayList(multimap.get(ruleSet));
+      startSet(xmlStringBuilder, ruleSet.getLabel());
+      ArrayList<Rule> rules = Lists.newArrayList(rulesBySet.get(ruleSet));
       for (Rule rule : rules) {
-        converter.rule(rule);
+        converter.rule(xmlStringBuilder, rule);
       }
     }
-    converter.end();
+    end(xmlStringBuilder);
+    return xmlStringBuilder.toString();
   }
 
-  private void startSet(String name) {
-    out.println("  <!-- " + name + " rules -->");
-    out.println();
+  private static void startSet(StringBuilder xmlStringBuilder, String name) {
+    xmlStringBuilder.append("  <!-- " + name + " rules -->");
+    xmlStringBuilder.append(LINE_SEPARATOR);
+    xmlStringBuilder.append(LINE_SEPARATOR);
   }
 
-  private void start() {
-    out.println("<rules>");
-    out.println();
+  private static void start(StringBuilder xmlStringBuilder) {
+    xmlStringBuilder.append("<rules>");
+    xmlStringBuilder.append(LINE_SEPARATOR);
   }
 
-  private void end() {
-    out.println("</rules>");
-    out.flush();
-    out.close();
+  private static void end(StringBuilder xmlStringBuilder) {
+    xmlStringBuilder.append("</rules>");
+    xmlStringBuilder.append(LINE_SEPARATOR);
   }
 
-  private void rule(Rule rule) {
+  private void rule(StringBuilder xmlStringBuilder, Rule rule) {
     if (duplications.contains(rule.getKey())) {
       System.out.println("Duplicated rule " + rule.getKey());
     } else {
       duplications.add(rule.getKey());
     }
 
-    rule.printAsXml(out);
+    rule.printAsXml(xmlStringBuilder);
     updateCounters(rule);
   }
 

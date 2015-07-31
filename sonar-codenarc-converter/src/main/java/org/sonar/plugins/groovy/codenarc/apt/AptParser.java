@@ -52,7 +52,7 @@ public class AptParser {
 
   private Map<String, AptResult> readFile(File file) throws Exception {
     Map<String, AptResult> results = Maps.newHashMap();
-    List<String> lines = Files.readAllLines(file.toPath(), Charset.defaultCharset());
+    List<String> lines = Files.readAllLines(file.toPath(), Charset.forName("UTF-8"));
 
     boolean inRule = false;
     boolean inParameters = false;
