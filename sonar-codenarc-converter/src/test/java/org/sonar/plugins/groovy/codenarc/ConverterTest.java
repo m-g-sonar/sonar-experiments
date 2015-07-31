@@ -47,6 +47,8 @@ import java.io.PrintStream;
 import java.io.StringWriter;
 
 public class ConverterTest {
+  
+  private static final String PLUGIN_RULES_FILE_LOCATION = "results/rules.xml";
 
   @org.junit.Rule
   public TemporaryFolder tmpDir = new TemporaryFolder();
@@ -55,7 +57,7 @@ public class ConverterTest {
   public void test_xml_equivalence() throws Exception {
     assertSimilarXml(
       getGeneratedRulesFile(),
-      TestUtils.getResource("results/rules_from_plugin_0.24.xml"));
+      TestUtils.getResource(PLUGIN_RULES_FILE_LOCATION));
   }
 
   private File getGeneratedRulesFile() throws IOException, Exception, FileNotFoundException {
