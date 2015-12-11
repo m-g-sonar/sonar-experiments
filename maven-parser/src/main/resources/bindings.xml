@@ -1,0 +1,10 @@
+<jxb:bindings version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+  jxb:extensionBindingPrefixes="xjc" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
+
+  <jxb:globalBindings>
+    <xjc:simple />
+    <xjc:javaType xmlType="xs:string" name="org.sonar.maven.model.LocatedAttribute" adapter="org.sonar.maven.model.LocatedAttributeAdapter" />
+    <xjc:superClass name="org.sonar.maven.model.LocatedTreeImpl" />
+  </jxb:globalBindings>
+</jxb:bindings>

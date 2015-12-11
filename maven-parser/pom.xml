@@ -16,6 +16,7 @@
   <properties>
     <!-- source: http://maven.apache.org/xsd/maven-4.0.0.xsd -->
     <xsdPath>src/main/resources/maven-4.0.0.xsd</xsdPath>
+    <bindingFile>src/main/resources/bindings.xml</bindingFile>
     <javaPackageName>org.sonar.maven.model.maven2</javaPackageName>
     <targetDir>target/generated-sources/xjc</targetDir>
   </properties>
@@ -79,11 +80,13 @@
               <tasks>
                 <mkdir dir="${targetDir}" />
                 <exec executable="xjc">
+                  <arg value="-extension" />
+                  <arg value="-b" />
+                  <arg value="${bindingFile}" />
                   <arg value="-p" />
                   <arg value="${javaPackageName}" />
                   <arg value="-d" />
                   <arg value="${targetDir}" />
-                  <arg value="-no-header" />
                   <arg value="${xsdPath}" />
                 </exec>
               </tasks>
