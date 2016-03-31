@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.check.Rule;
 import org.sonar.plugins.java.api.IssuableSubscriptionVisitor;
+import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
 import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 import org.sonar.plugins.java.api.tree.Tree;
 import org.sonar.plugins.java.api.tree.Tree.Kind;
@@ -30,7 +31,11 @@ public class UnknownMethodCheck extends IssuableSubscriptionVisitor {
   public void visitNode(Tree tree) {
     MethodInvocationTree mit = (MethodInvocationTree) tree;
     if (mit.symbol().isUnknown()) {
-      reportIssue(mit.methodSelect(), "Unknown method");
+      Tree reportTree = mit.methodSelect();
+      if (reportTree.is(Tree.Kind.MEMBER_SELECT)) {
+        reportTree = ((MemberSelectExpressionTree) reportTree).identifier();
+      }
+      reportIssue(reportTree, "Unknown method");
     }
   }
 
