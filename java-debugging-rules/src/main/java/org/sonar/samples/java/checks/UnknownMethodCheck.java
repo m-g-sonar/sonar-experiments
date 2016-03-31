@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableList;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.check.Rule;
 import org.sonar.plugins.java.api.IssuableSubscriptionVisitor;
+import org.sonar.plugins.java.api.JavaFileScannerContext;
+import org.sonar.plugins.java.api.tree.ExpressionTree;
 import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
 import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 import org.sonar.plugins.java.api.tree.Tree;
@@ -12,6 +14,7 @@ import org.sonar.plugins.java.api.tree.Tree.Kind;
 import org.sonar.squidbridge.annotations.SqaleConstantRemediation;
 import org.sonar.squidbridge.annotations.SqaleSubCharacteristic;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Rule(key = "UnknownMethodInvocation",
@@ -32,10 +35,16 @@ public class UnknownMethodCheck extends IssuableSubscriptionVisitor {
     MethodInvocationTree mit = (MethodInvocationTree) tree;
     if (mit.symbol().isUnknown()) {
       Tree reportTree = mit.methodSelect();
+      List<JavaFileScannerContext.Location> secondary = new ArrayList<>();
+      for (ExpressionTree argument : mit.arguments()) {
+        if (argument.symbolType().isUnknown()) {
+          secondary.add(new JavaFileScannerContext.Location("Unknown type", argument));
+        }
+      }
       if (reportTree.is(Tree.Kind.MEMBER_SELECT)) {
         reportTree = ((MemberSelectExpressionTree) reportTree).identifier();
       }
-      reportIssue(reportTree, "Unknown method");
+      reportIssue(reportTree, "Unknown method", secondary, null);
     }
   }
 
