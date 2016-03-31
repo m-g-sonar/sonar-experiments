@@ -30,7 +30,7 @@ public class UnknownMethodCheck extends IssuableSubscriptionVisitor {
   public void visitNode(Tree tree) {
     MethodInvocationTree mit = (MethodInvocationTree) tree;
     if (mit.symbol().isUnknown()) {
-      reportIssue(tree, "Unknown method");
+      reportIssue(mit.methodSelect(), "Unknown method");
     }
   }
 
