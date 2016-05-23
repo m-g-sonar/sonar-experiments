@@ -1,8 +1,12 @@
 package org.sonar.template.java;
 
+import com.google.common.collect.Iterables;
+
 import org.sonar.api.server.rule.RulesDefinition;
+import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.plugins.java.Java;
-import org.sonar.squidbridge.annotations.AnnotationBasedRulesDefinition;
+
+import java.util.List;
 
 /**
  * Declare rule metadata in server repository of rules. 
@@ -17,7 +21,9 @@ public class JavaCustomRulesDefinition implements RulesDefinition {
     NewRepository repository = context.createRepository(REPOSITORY_KEY, Java.KEY);
     repository.setName("Java Custom Rules - Template");
 
-    AnnotationBasedRulesDefinition.load(repository, "java", JavaCustomRulesList.getChecks());
+    List<Class> checks = JavaCustomRulesList.getChecks();
+    new RulesDefinitionAnnotationLoader().load(repository, Iterables.toArray(checks, Class.class));
     repository.done();
   }
+
 }
