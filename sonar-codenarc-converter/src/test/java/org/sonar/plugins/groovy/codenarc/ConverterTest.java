@@ -1,7 +1,7 @@
 /*
  * Sonar CodeNarc Converter
- * Copyright (C) 2011 SonarSource
- * dev@sonar.codehaus.org
+ * Copyright (C) 2011-2016 SonarSource SA
+ * mailto:contact AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -13,20 +13,20 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package org.sonar.plugins.groovy.codenarc;
 
 import com.google.common.collect.Lists;
-import difflib.Delta;
-import difflib.DiffUtils;
-import difflib.Patch;
+
+import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.sonar.test.TestUtils;
+import org.sonar.plugins.groovy.codenarc.printer.JsonHtmlPrinter;
+import org.sonar.plugins.groovy.codenarc.printer.XMLPrinter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -41,33 +41,96 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import difflib.Delta;
+import difflib.DiffUtils;
+import difflib.Patch;
 
 public class ConverterTest {
   
-  private static final String PLUGIN_RULES_FILE_LOCATION = "results/rules.xml";
+  private static final String PLUGIN_RULES_FILE_LOCATION = "../../sonar-groovy-plugin/src/main/resources/org/sonar/plugins/groovy/rules.xml";
+  private static final String PLUGIN_RULES_FOLDER_LOCATION = "../../sonar-groovy-plugin/src/main/resources/org/sonar/plugins/groovy/rules";
 
   @org.junit.Rule
   public TemporaryFolder tmpDir = new TemporaryFolder();
 
   @Test
   public void test_xml_equivalence() throws Exception {
-    assertSimilarXml(
-      getGeneratedRulesFile(),
-      TestUtils.getResource(PLUGIN_RULES_FILE_LOCATION));
+    assertSimilarXml(getGeneratedXmlRulesFile(), new File(PLUGIN_RULES_FILE_LOCATION));
   }
 
-  private File getGeneratedRulesFile() throws IOException, Exception, FileNotFoundException {
-    File generatedRules = tmpDir.newFile("rules.xml");
-    String xml = Converter.convert();
-    PrintStream out = new PrintStream(generatedRules, "UTF-8");
-    out.print(xml);
-    out.flush();
-    out.close();
-    return generatedRules;
+  @Test
+  public void test_json_and_html_equivalence() throws Exception {
+    assertSimilarJsonAndHtml(getGeneratedRuleFiles(), new File(PLUGIN_RULES_FOLDER_LOCATION));
+  }
+
+  private static void assertSimilarJsonAndHtml(File generatedRulesFolder, File existingRulesFolder) throws Exception {
+    File[] generatedFiles = generatedRulesFolder.listFiles();
+    File[] existingFiles = existingRulesFolder.listFiles();
+    Assert.assertEquals(generatedFiles.length, existingFiles.length);
+
+    Map<String, File> existingFileByName = new HashMap<>();
+    for (File file : existingFiles) {
+      existingFileByName.put(file.getName(), file);
+    }
+
+    Map<String, File> generatedFileByName = new HashMap<>();
+    for (File file : generatedFiles) {
+      generatedFileByName.put(file.getName(), file);
+    }
+
+    int nbrDiff = 0;
+
+    for (Entry<String, File> existingFileEntry : existingFileByName.entrySet()) {
+      String fileName = existingFileEntry.getKey();
+      Assert.assertTrue(generatedFileByName.containsKey(fileName));
+
+      List<String> existingFileLines = Files.readAllLines(existingFileEntry.getValue().toPath());
+      String existingFileContent = StringUtils.join(existingFileLines, '\n');
+      List<String> generatedFileLines = Files.readAllLines(generatedFileByName.get(fileName).toPath());
+      String generatedFileContent = StringUtils.join(generatedFileLines, '\n');
+
+      if (existingFileLines.size() != generatedFileLines.size() || !existingFileContent.equals(generatedFileContent)) {
+        nbrDiff++;
+        showDelta(fileName, generatedFileLines, existingFileLines);
+      }
+    }
+    /*
+     * Known diffs:
+     * - MisorderedStaticImportsRule : description of 'comesBefore' parameter missing in apt files
+     * - FileCreateTempFileRule: link to website
+     * - BracesForIfElseRule: default value of parameters should be true, not 'the same as sameLine'
+     */
+    Assert.assertEquals(3, nbrDiff);
+  }
+
+  static void showDelta(String ruleName, String s1, String s2) {
+    showDelta(ruleName, Lists.newArrayList(s1), Lists.newArrayList(s2));
+  }
+
+  static void showDelta(String ruleName, List<String> s1, List<String> s2) {
+    System.out.println("------------------------------------------------------------------------------------------");
+    System.out.println("DIFFERENCE! " + ruleName);
+    Patch p = DiffUtils.diff(s1, s2);
+    for (Delta delta : p.getDeltas()) {
+      System.out.println(delta);
+    }
+  }
+
+  private File getGeneratedRuleFiles() throws Exception {
+    File generatedRules = tmpDir.newFolder("rules");
+    return new JsonHtmlPrinter().init(new Converter()).process(Converter.loadRules()).printAll(generatedRules);
+  }
+
+  private File getGeneratedXmlRulesFile() throws Exception {
+    File generatedRules = tmpDir.newFolder("xml");
+    return new XMLPrinter().init(new Converter()).process(Converter.loadRules()).printAll(generatedRules);
   }
 
   private static void assertSimilarXml(File generatedRulesXML, File rulesFromPluginXML) throws Exception {
@@ -103,16 +166,9 @@ public class ConverterTest {
         }
         if (diff) {
           nbrDiff++;
-          System.out.println("------------------------------------------------------------------------------------------");
           String generatedRuleString = nodeToString(generatedRule);
           String pluginRuleString = nodeToString(pluginRule);
-          System.out.println("DIFFERENCE! " + getRuleKey(generatedRule));
-          Patch p = DiffUtils.diff(
-            Lists.newArrayList(generatedRuleString.split("\\r?\\n")),
-            Lists.newArrayList(pluginRuleString.split("\\r?\\n")));
-          for (Delta delta : p.getDeltas()) {
-            System.out.println(delta);
-          }
+          showDelta(getRuleKey(generatedRule), Lists.newArrayList(generatedRuleString.split("\\r?\\n")), Lists.newArrayList(pluginRuleString.split("\\r?\\n")));
         } else if (!found) {
           nbrMissing++;
           System.out.println("------------------------------------------------------------------------------------------");
@@ -122,7 +178,13 @@ public class ConverterTest {
     }
 
     Assert.assertEquals(0, nbrMissing);
-    Assert.assertEquals(2, nbrDiff);
+    /*
+     * Known diffs:
+     * - MisorderedStaticImportsRule : description of 'comesBefore' parameter missing in apt files
+     * - FileCreateTempFileRule: link to website
+     * - BracesForIfElseRule: default value of parameters should be true, not 'the same as sameLine'
+     */
+    Assert.assertEquals(3, nbrDiff);
   }
 
   private static String getRuleKey(Node Rule) {

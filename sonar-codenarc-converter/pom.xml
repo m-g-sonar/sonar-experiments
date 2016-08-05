@@ -5,10 +5,10 @@
   <parent>
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
-    <version>34</version>
+    <version>36</version>
   </parent>
 
-  <groupId>org.example</groupId>
+  <groupId>org.sonarsource.sonar-groovy-plugin.sonar-codenarc-converter</groupId>
   <artifactId>sonar-codenarc-converter</artifactId>
   <version>0.1-SNAPSHOT</version>
 
@@ -28,7 +28,7 @@
   </licenses>
 
   <properties>
-    <sonar.version>5.6</sonar.version>
+    <sonar.version>2.4</sonar.version>
   </properties>
 
   <dependencies>
@@ -38,32 +38,31 @@
       <version>1.5.6</version>
     </dependency>
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>19.0</version>
-    </dependency>
-	<dependency>
       <groupId>com.googlecode.java-diff-utils</groupId>
       <artifactId>diffutils</artifactId>
       <version>1.2.1</version>
     </dependency>
-	<dependency>
-      <groupId>org.sonarsource.sonarqube</groupId>
+    <dependency>
+      <groupId>org.codehaus.sonar</groupId>
       <artifactId>sonar-testing-harness</artifactId>
-      <version>${sonar.version}</version>
+      <version>4.5.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.sonarsource.sonarqube</groupId>
+      <groupId>org.codehaus.sonar</groupId>
       <artifactId>sonar-plugin-api</artifactId>
       <version>${sonar.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.7</version>
     </dependency>
     <dependency>
       <groupId>org.codenarc</groupId>
       <artifactId>CodeNarc</artifactId>
-      <version>0.24</version>
+      <version>0.25.2</version>
       <exclusions>
         <exclusion>
           <groupId>log4j</groupId>

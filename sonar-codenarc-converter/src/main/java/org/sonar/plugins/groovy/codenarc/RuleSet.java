@@ -1,7 +1,7 @@
 /*
  * Sonar CodeNarc Converter
- * Copyright (C) 2011 SonarSource
- * dev@sonar.codehaus.org
+ * Copyright (C) 2011-2016 SonarSource SA
+ * mailto:contact AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -13,9 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package org.sonar.plugins.groovy.codenarc;
 
@@ -23,7 +23,8 @@ import org.codenarc.rule.AbstractRule;
 
 public enum RuleSet {
   BASIC("basic"),
-  SERIALIZATION("serialization"), // new rule set in 0.14
+  // new rule set in 0.14
+  SERIALIZATION("serialization"),
   BRACES("braces"),
   CONCURRENCY("concurrency"),
   DESIGN("design"),
@@ -38,11 +39,16 @@ public enum RuleSet {
   SIZE("size"),
   UNNECESSARY("unnecessary"),
   UNUSED("unused"),
-  JDBC("jdbc"), // new rule set in 0.14
-  SECURITY("security"), // new rule set in 0.14
-  FORMATTING("formatting"), // new rule set in 0.15
-  CONVENTION("convention"), // new rule set in 0.16
-  GROOVYISM("groovyism"); // new rule set in 0.16
+  // new rule set in 0.14
+  JDBC("jdbc"),
+  // new rule set in 0.14
+  SECURITY("security"),
+  // new rule set in 0.15
+  FORMATTING("formatting"),
+  // new rule set in 0.16
+  CONVENTION("convention"),
+  // new rule set in 0.16
+  GROOVYISM("groovyism");
 
   private final String label;
 

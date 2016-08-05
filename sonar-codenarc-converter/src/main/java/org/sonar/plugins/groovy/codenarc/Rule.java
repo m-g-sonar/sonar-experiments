@@ -1,7 +1,7 @@
 /*
  * Sonar CodeNarc Converter
- * Copyright (C) 2011 SonarSource
- * dev@sonar.codehaus.org
+ * Copyright (C) 2011-2016 SonarSource SA
+ * mailto:contact AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -13,22 +13,22 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package org.sonar.plugins.groovy.codenarc;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
 import org.apache.commons.lang.StringUtils;
 import org.codenarc.rule.AbstractRule;
 import org.sonar.plugins.groovy.codenarc.apt.AptResult;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -36,22 +36,52 @@ import java.util.Set;
 
 public class Rule {
 
-  private AbstractRule rule;
-  private String key;
-  private String internalKey;
-  private String name;
-  private String description;
-  private String severity;
-  private String version;
-  private Set<String> tags;
-  private Set<RuleParameter> parameters;
+  public final AbstractRule ruleInstance;
+  public final String key;
+  public final String internalKey;
+  public final String name;
+  public final String description;
+  public final String severity;
+  public final String version;
+  public final Set<String> tags;
+  public final Set<RuleParameter> parameters;
+
+  // SONARGROOV-40
+  private static final String[] FIXED_RULES_WITH_NULL_PARAMETERS = {
+    "org.codenarc.rule.design.PrivateFieldCouldBeFinalRule",
+    "org.codenarc.rule.generic.IllegalRegexRule",
+    "org.codenarc.rule.generic.RequiredRegexRule",
+    "org.codenarc.rule.generic.RequiredStringRule",
+    "org.codenarc.rule.generic.StatelessClassRule",
+    "org.codenarc.rule.generic.IllegalPackageReferenceRule",
+    "org.codenarc.rule.generic.IllegalClassReferenceRule",
+    "org.codenarc.rule.generic.IllegalClassMemberRule",
+    "org.codenarc.rule.generic.IllegalStringRule",
+    "org.codenarc.rule.generic.IllegalSubclassRule",
+    "org.codenarc.rule.grails.GrailsPublicControllerMethodRule",
+    "org.codenarc.rule.junit.SpockIgnoreRestUsedRule",
+    "org.codenarc.rule.junit.JUnitPublicPropertyRule",
+    "org.codenarc.rule.naming.AbstractClassNameRule",
+    "org.codenarc.rule.naming.FieldNameRule",
+    "org.codenarc.rule.naming.InterfaceNameRule",
+    "org.codenarc.rule.naming.MethodNameRule",
+    "org.codenarc.rule.naming.ParameterNameRule",
+    "org.codenarc.rule.naming.PropertyNameRule",
+    "org.codenarc.rule.naming.VariableNameRule",
+    "org.codenarc.rule.naming.PackageNameMatchesFilePathRule",
+    "org.codenarc.rule.size.CyclomaticComplexityRule",
+    "org.codenarc.rule.size.MethodSizeRule",
+    "org.codenarc.rule.size.CrapMetricRule",
+    "org.codenarc.rule.size.AbcMetricRule",
+    "org.codenarc.rule.unused.UnusedVariableRule"
+  };
 
   public Rule(Class<? extends AbstractRule> ruleClass, String since, Properties props, Map<String, AptResult> parametersByRule) throws Exception {
-    rule = ruleClass.newInstance();
+    ruleInstance = ruleClass.newInstance();
     key = ruleClass.getCanonicalName();
     internalKey = StringUtils.removeEnd(ruleClass.getSimpleName(), "Rule");
     name = cleanName(internalKey);
-    severity = severity(rule.getPriority());
+    severity = severity(ruleInstance.getPriority());
     tags = getTags(key, internalKey);
     version = since;
 
@@ -61,7 +91,7 @@ public class Rule {
     parameters = extractParameters(dataFromAptFile, descriptionFromProperty);
   }
 
-  private String cleanName(String internalKey) {
+  private static String cleanName(String internalKey) {
     String result = StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(internalKey), ' ');
     return result.replace("J Unit", "JUnit");
   }
@@ -78,17 +108,17 @@ public class Rule {
           params1[i] = paramName.substring(paramName.lastIndexOf("<em>") + 4);
         }
       }
-      addParameters(params1, rule, extractedParameters);
+      addParameters(params1, ruleInstance, extractedParameters);
     }
     String[] params2 = StringUtils.substringsBetween(description, "configured in <em>", "</em>");
     if (params2 != null) {
-      addParameters(params2, rule, extractedParameters);
+      addParameters(params2, ruleInstance, extractedParameters);
     }
     if (StringUtils.contains(description, "length property")) {
-      addParameter("length", rule, extractedParameters);
+      addParameter("length", ruleInstance, extractedParameters);
     }
     if (StringUtils.contains(description, "sameLine property")) {
-      addParameter("sameLine", rule, extractedParameters);
+      addParameter("sameLine", ruleInstance, extractedParameters);
     }
     return Sets.newHashSet(extractedParameters.values());
   }
@@ -124,12 +154,18 @@ public class Rule {
     String result = "";
     try {
       // Hack to get the default value
-      Field f = rule.getClass().getDeclaredField(parameterName);
+      Field f = ruleInstance.getClass().getDeclaredField(parameterName);
       f.setAccessible(true);
-      Object value = f.get(rule);
-      return value.toString();
-    } catch (Exception e) {
+      Object value = f.get(ruleInstance);
+      if (value != null) {
+        return value.toString();
+      }
+    } catch (NoSuchFieldException e) {
       // do nothing, there is probably no default value
+    } catch (IllegalArgumentException e) {
+      // do nothing, that's probably not the correct name
+    } catch (IllegalAccessException e) {
+      // do nothing, can not access field
     }
     return result;
   }
@@ -142,7 +178,7 @@ public class Rule {
     return cleanDescription(result);
   }
 
-  private String severity(int priority) {
+  private static String severity(int priority) {
     switch (priority) {
       case 1:
         return "INFO";
@@ -151,11 +187,11 @@ public class Rule {
       case 3:
         return "MAJOR";
       default:
-        throw new RuntimeException("Should never happen");
+        throw new IllegalStateException("Should never happen");
     }
   }
 
-  private Set<String> getTags(String key, String internalKey) {
+  private static Set<String> getTags(String key, String internalKey) {
     String[] split = key.split("\\.");
     String codeNarcCategory = split[split.length - 2];
     Set<String> results = Sets.newHashSet();
@@ -190,7 +226,7 @@ public class Rule {
     return results;
   }
 
-  private Set<String> handleBasicCategory(String internalKey) {
+  private static Set<String> handleBasicCategory(String internalKey) {
     Set<String> results = Sets.newHashSet();
     if (internalKey.startsWith("Empty")) {
       results.add("unused");
@@ -208,17 +244,17 @@ public class Rule {
     return results;
   }
 
-  private Set<String> handleParticularCases(String internalKey) {
+  private static Set<String> handleParticularCases(String internalKey) {
     Set<String> results = Sets.newHashSet();
-    if (internalKey.equals("DeadCode")) {
+    if ("DeadCode".equals(internalKey)) {
       results.add("unused");
-    } else if (internalKey.equals("ExplicitGarbageCollection")) {
+    } else if ("ExplicitGarbageCollection".equals(internalKey)) {
       results.add("unpredictable");
-    } else if (internalKey.equals("HardCodedWindowsFileSeparator") || internalKey.equals("HardCodedWindowsRootDirectory")) {
+    } else if ("HardCodedWindowsFileSeparator".equals(internalKey) || "HardCodedWindowsRootDirectory".equals(internalKey)) {
       results.add("pitfall");
-    } else if (internalKey.equals("ForLoopShouldBeWhileLoop")) {
+    } else if ("ForLoopShouldBeWhileLoop".equals(internalKey)) {
       results.add("clumsy");
-    } else if (internalKey.equals("ClassForName")) {
+    } else if ("ClassForName".equals(internalKey)) {
       results.add("leak");
       results.add("owasp-a1");
     } else {
@@ -248,7 +284,7 @@ public class Rule {
   private String handleUrls(String description) {
     String result = description;
     String[] urls = extractUrls(description);
-    if (urls != null) {
+    if (urls.length > 0) {
       for (String url : urls) {
         String copy = url;
         boolean trailingAcc = false;
@@ -270,7 +306,7 @@ public class Rule {
     return result;
   }
 
-  private String[] extractUrls(String description) {
+  private static String[] extractUrls(String description) {
     List<String> urls = Lists.newArrayList();
     int index = 0;
     while (index < description.length()) {
@@ -286,78 +322,28 @@ public class Rule {
       index = end;
     }
     if (urls.isEmpty()) {
-      return null;
+      return new String[] {};
     }
     return urls.toArray(new String[urls.size()]);
   }
 
-  /**
-   * Rule format based on {@link org.sonar.api.server.rule.RulesDefinitionXmlLoader}
-   */
-  public void printAsXml(StringBuilder xmlStringBuilder) {
-    if (version != null) {
-      xmlStringBuilder.append("  <!-- since " + version + " -->");
-      xmlStringBuilder.append(Converter.LINE_SEPARATOR);
+  public String fixedRuleKey() {
+    if (hasNullParameters() && isPartOfFixedRules()) {
+      return key + ".fixed";
     }
-    xmlStringBuilder.append("  <rule>");
-    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-    xmlStringBuilder.append("    <key>" + key + "</key>");
-    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-    xmlStringBuilder.append("    <severity>" + severity + "</severity>");
-    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-    xmlStringBuilder.append("    <name><![CDATA[" + name + "]]></name>");
-    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-    xmlStringBuilder.append("    <internalKey><![CDATA[" + internalKey + "]]></internalKey>");
-    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-    xmlStringBuilder.append("    <description><![CDATA[" + description + "]]></description>");
-    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-    if (!tags.isEmpty()) {
-      for (String tag : tags) {
-        xmlStringBuilder.append("    <tag>" + tag + "</tag>");
-        xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-      }
-    }
-
-    if (!parameters.isEmpty()) {
-      List<RuleParameter> sortedParameters = Lists.newArrayList(parameters);
-      Collections.sort(sortedParameters, new Comparator<RuleParameter>() {
-        @Override
-        public int compare(RuleParameter o1, RuleParameter o2) {
-          return o1.key.compareTo(o2.key);
-        }
-      });
-      for (RuleParameter parameter : sortedParameters) {
-        xmlStringBuilder.append("    <param>");
-        xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-        xmlStringBuilder.append("      <key>" + parameter.key + "</key>");
-        xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-        if (StringUtils.isNotBlank(parameter.description)) {
-          xmlStringBuilder.append("      <description><![CDATA[" + parameter.description + "]]></description>");
-          xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-        }
-        if (StringUtils.isNotBlank(parameter.defaultValue)) {
-          xmlStringBuilder.append("      <defaultValue>" + parameter.defaultValue + "</defaultValue>");
-          xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-        }
-        xmlStringBuilder.append("    </param>");
-        xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-      }
-    }
-
-    xmlStringBuilder.append("  </rule>");
-    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-    xmlStringBuilder.append(Converter.LINE_SEPARATOR);
-  }
-
-  public String getVersion() {
-    return version;
-  }
-
-  public Set<String> getTags() {
-    return tags;
-  }
-
-  public String getKey() {
     return key;
+  }
+
+  private boolean isPartOfFixedRules() {
+    return Arrays.stream(FIXED_RULES_WITH_NULL_PARAMETERS).anyMatch(key::equals);
+  }
+
+  private boolean hasNullParameters() {
+    for (RuleParameter parameter : parameters) {
+      if ("null".equals(parameter.defaultValue)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

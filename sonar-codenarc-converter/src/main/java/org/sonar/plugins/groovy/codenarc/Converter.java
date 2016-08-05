@@ -1,7 +1,7 @@
 /*
  * Sonar CodeNarc Converter
- * Copyright (C) 2011 SonarSource
- * dev@sonar.codehaus.org
+ * Copyright (C) 2011-2016 SonarSource SA
+ * mailto:contact AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -13,9 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package org.sonar.plugins.groovy.codenarc;
 
@@ -23,15 +23,14 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import org.apache.commons.io.IOUtils;
+
 import org.codenarc.rule.AbstractRule;
 import org.sonar.plugins.groovy.codenarc.apt.AptParser;
 import org.sonar.plugins.groovy.codenarc.apt.AptResult;
+import org.sonar.plugins.groovy.codenarc.printer.JsonHtmlPrinter;
+import org.sonar.plugins.groovy.codenarc.printer.Printer;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -44,55 +43,47 @@ public class Converter {
   /**
    * location of the generated file
    */
-  private static final String RESULTS_FOLDER = "target/results";
+  public static final File RESULTS_FOLDER = new File("target/results");
 
   /**
    * location of the apt files in the CodeNarc project
    */
-  private static final String RULES_APT_FILES_LOCATION = "../../CodeNarc/src/site/apt";
+  private static final String RULES_APT_FILES_LOCATION = "../../../CodeNarc/src/site/apt";
 
-  public static final String LINE_SEPARATOR = System.getProperty("line.separator");
-
-  private Set<String> duplications = new HashSet<String>();
-
-  private static int count = 0;
-  private static Map<String, Integer> rulesByVersion = Maps.newHashMap();;
-  private static Map<String, Integer> rulesByTags = Maps.newHashMap();
+  private int count = 0;
+  private Map<String, Integer> rulesByVersion = Maps.newHashMap();
+  private Map<String, Integer> rulesByTags = Maps.newHashMap();
+  private Set<String> duplications = new HashSet<>();
 
   public static void main(String[] args) throws Exception {
-    String xml = Converter.convert();
-    
-    PrintStream out = new PrintStream(setUpRulesFile());
-    out.print(xml);
-    out.flush();
-    out.close();
+    Converter converter = new Converter();
 
-    resultsByCategory();
-    resultsByVersion();
+    // process(converter, new XMLPrinter());
+    process(converter, new JsonHtmlPrinter());
+
+    converter.resultsByCategory();
+    converter.resultsByVersion();
     System.out.println();
-    System.out.println(count + " rules processed");
-  }
-  
-  private static File setUpRulesFile() throws IOException {
-    File resultDir = new File(RESULTS_FOLDER);
-    resultDir.mkdirs();
-
-    File rules = new File(resultDir, "rules.xml");
-    if (rules.exists()) {
-      rules.delete();
-    }
-    rules.createNewFile();
-    return rules;
+    System.out.println(converter.count + " rules processed");
   }
 
-  private static Multimap<RuleSet, Rule> loadRules() throws Exception {
+  private static void process(Converter converter, Printer printer) throws Exception {
+    checkResultFolder();
+    printer.init(converter).process(Converter.loadRules()).printAll(RESULTS_FOLDER);
+  }
+
+  private static void checkResultFolder() {
+    RESULTS_FOLDER.mkdirs();
+  }
+
+  public static Multimap<RuleSet, Rule> loadRules() throws Exception {
     Properties props = new Properties();
     props.load(Converter.class.getResourceAsStream("/codenarc-base-messages.properties"));
 
     Map<String, AptResult> parametersByRule = retrieveRulesParameters();
 
     Multimap<RuleSet, Rule> rules = LinkedListMultimap.create();
-    
+
     insertRules(rules, /* legacy */null, props, parametersByRule,
       org.codenarc.rule.unused.UnusedArrayRule.class,
       org.codenarc.rule.unused.UnusedObjectRule.class,
@@ -177,7 +168,8 @@ public class Converter {
       org.codenarc.rule.concurrency.ThreadLocalNotStaticFinalRule.class,
       org.codenarc.rule.concurrency.ThreadYieldRule.class,
       org.codenarc.rule.concurrency.VolatileLongOrDoubleFieldRule.class,
-      org.codenarc.rule.design.CloneableWithoutCloneRule.class, // moved from basic in 0.16
+      // moved from basic in 0.16
+      org.codenarc.rule.design.CloneableWithoutCloneRule.class,
       org.codenarc.rule.design.ImplementationAsTypeRule.class);
 
     insertRules(rules, "0.11", props, parametersByRule,
@@ -202,9 +194,12 @@ public class Converter {
       // org.codenarc.rule.basic.SerialVersionUIDRule.class - removed in 0.14
       org.codenarc.rule.concurrency.SynchronizedOnGetClassRule.class,
       org.codenarc.rule.concurrency.UseOfNotifyMethodRule.class,
-      org.codenarc.rule.design.BooleanMethodReturnsNullRule.class, // moved from basic in 0.16
-      org.codenarc.rule.design.ReturnsNullInsteadOfEmptyArrayRule.class, // moved from basic in 0.16
-      org.codenarc.rule.design.ReturnsNullInsteadOfEmptyCollectionRule.class, // moved from basic in 0.16
+      // moved from basic in 0.16
+      org.codenarc.rule.design.BooleanMethodReturnsNullRule.class,
+      // moved from basic in 0.16
+      org.codenarc.rule.design.ReturnsNullInsteadOfEmptyArrayRule.class,
+      // moved from basic in 0.16
+      org.codenarc.rule.design.ReturnsNullInsteadOfEmptyCollectionRule.class,
       org.codenarc.rule.convention.InvertedIfElseRule.class,
       org.codenarc.rule.groovyism.ExplicitArrayListInstantiationRule.class,
       org.codenarc.rule.groovyism.ExplicitCallToAndMethodRule.class,
@@ -261,7 +256,8 @@ public class Converter {
       org.codenarc.rule.exceptions.CatchIndexOutOfBoundsExceptionRule.class,
       org.codenarc.rule.exceptions.MissingNewInThrowStatementRule.class,
       org.codenarc.rule.basic.ExplicitGarbageCollectionRule.class,
-      org.codenarc.rule.design.CompareToWithoutComparableRule.class, // moved from basic in 0.16
+      // moved from basic in 0.16
+      org.codenarc.rule.design.CompareToWithoutComparableRule.class,
       org.codenarc.rule.design.SimpleDateFormatMissingLocaleRule.class,
       org.codenarc.rule.design.AbstractClassWithoutAbstractMethodRule.class,
       org.codenarc.rule.design.CloseWithoutCloseableRule.class,
@@ -271,9 +267,12 @@ public class Converter {
       org.codenarc.rule.convention.ConfusingTernaryRule.class);
 
     insertRules(rules, "0.13", props, parametersByRule,
-      org.codenarc.rule.unnecessary.AddEmptyStringRule.class,// moved from basic in 0.16
-      org.codenarc.rule.unnecessary.ConsecutiveLiteralAppendsRule.class,// moved from basic in 0.16
-      org.codenarc.rule.unnecessary.ConsecutiveStringConcatenationRule.class,// moved from basic in 0.16
+      // moved from basic in 0.16
+      org.codenarc.rule.unnecessary.AddEmptyStringRule.class,
+      // moved from basic in 0.16
+      org.codenarc.rule.unnecessary.ConsecutiveLiteralAppendsRule.class,
+      // moved from basic in 0.16
+      org.codenarc.rule.unnecessary.ConsecutiveStringConcatenationRule.class,
       org.codenarc.rule.unnecessary.UnnecessaryCallToSubstringRule.class,
       org.codenarc.rule.unnecessary.UnnecessaryDefInMethodDeclarationRule.class,
       org.codenarc.rule.unnecessary.UnnecessaryModOneRule.class,
@@ -471,6 +470,10 @@ public class Converter {
       org.codenarc.rule.naming.InterfaceNameSameAsSuperInterfaceRule.class,
       org.codenarc.rule.design.AssignmentToStaticFieldFromInstanceMethodRule.class);
 
+    insertRules(rules, "0.25", props, parametersByRule,
+      org.codenarc.rule.convention.TrailingCommaRule.class,
+      org.codenarc.rule.convention.NoTabCharacterRule.class);
+
     return rules;
   }
 
@@ -505,60 +508,9 @@ public class Converter {
     return rulesAptFiles;
   }
 
-  public static String convert() throws Exception {
-
-    Multimap<RuleSet, Rule> rulesBySet = loadRules();
-
-    StringBuilder xmlStringBuilder = new StringBuilder();
-
-    String version = IOUtils.toString(Converter.class.getResourceAsStream("/codenarc-version.txt"));
-    xmlStringBuilder.append("<!-- Generated using CodeNarc " + version + " -->");
-    xmlStringBuilder.append(LINE_SEPARATOR);
-
-    Converter converter = new Converter();
-    start(xmlStringBuilder);
-
-    for (RuleSet ruleSet : RuleSet.values()) {
-      startSet(xmlStringBuilder, ruleSet.getLabel());
-      ArrayList<Rule> rules = Lists.newArrayList(rulesBySet.get(ruleSet));
-      for (Rule rule : rules) {
-        converter.rule(xmlStringBuilder, rule);
-      }
-    }
-    end(xmlStringBuilder);
-    return xmlStringBuilder.toString();
-  }
-
-  private static void startSet(StringBuilder xmlStringBuilder, String name) {
-    xmlStringBuilder.append("  <!-- " + name + " rules -->");
-    xmlStringBuilder.append(LINE_SEPARATOR);
-    xmlStringBuilder.append(LINE_SEPARATOR);
-  }
-
-  private static void start(StringBuilder xmlStringBuilder) {
-    xmlStringBuilder.append("<rules>");
-    xmlStringBuilder.append(LINE_SEPARATOR);
-  }
-
-  private static void end(StringBuilder xmlStringBuilder) {
-    xmlStringBuilder.append("</rules>");
-    xmlStringBuilder.append(LINE_SEPARATOR);
-  }
-
-  private void rule(StringBuilder xmlStringBuilder, Rule rule) {
-    if (duplications.contains(rule.getKey())) {
-      System.out.println("Duplicated rule " + rule.getKey());
-    } else {
-      duplications.add(rule.getKey());
-    }
-
-    rule.printAsXml(xmlStringBuilder);
-    updateCounters(rule);
-  }
-
   private void updateCounters(Rule rule) {
     count++;
-    for (String tag : rule.getTags()) {
+    for (String tag : rule.tags) {
       Integer nbByTag = rulesByTags.get(tag);
       if (nbByTag == null) {
         nbByTag = 0;
@@ -566,7 +518,7 @@ public class Converter {
       rulesByTags.put(tag, nbByTag + 1);
     }
 
-    String version = rule.getVersion() == null ? "legacy" : rule.getVersion();
+    String version = rule.version == null ? "legacy" : rule.version;
     Integer nbByVersion = rulesByVersion.get(version);
     if (nbByVersion == null) {
       nbByVersion = 0;
@@ -574,7 +526,7 @@ public class Converter {
     rulesByVersion.put(version, nbByVersion + 1);
   }
 
-  private static void resultsByVersion() {
+  private void resultsByVersion() {
     System.out.println("Rules by Version:");
     List<String> versions = Lists.newArrayList(rulesByVersion.keySet());
     Collections.sort(versions);
@@ -583,12 +535,23 @@ public class Converter {
     }
   }
 
-  private static void resultsByCategory() {
+  private void resultsByCategory() {
     System.out.println("Rules by category:");
     List<String> categories = Lists.newArrayList(rulesByTags.keySet());
     Collections.sort(categories);
     for (String category : categories) {
       System.out.println("  - " + category + " : " + rulesByTags.get(category));
     }
+  }
+
+  public void startPrintingRule(Rule rule) {
+    if (duplications.contains(rule.key)) {
+      System.out.println("Duplicated rule " + rule.key);
+    } else {
+      duplications.add(rule.key);
+    }
+
+    updateCounters(rule);
+
   }
 }
