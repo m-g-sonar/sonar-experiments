@@ -5,11 +5,14 @@
 
 	<groupId>org.sonar.samples</groupId>
 	<artifactId>java-debugging-rules</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.1-SNAPSHOT</version>
 	<packaging>sonar-plugin</packaging>
 
 	<properties>
-		<java.plugin.version>3.12</java.plugin.version>
+		<sonar.version>5.6</sonar.version>
+		<java.plugin.version>4.2</java.plugin.version>
+		<sslr.version>1.21</sslr.version>
+		<gson.version>2.6.2</gson.version>
 	</properties>
 
 	<name>Java Debugging Rules</name>
@@ -17,9 +20,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.codehaus.sonar</groupId>
+			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-plugin-api</artifactId>
-			<version>4.5.6</version>
+			<version>${sonar.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -30,7 +33,7 @@
 			<version>${java.plugin.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.sonarsource.java</groupId>
 			<artifactId>java-frontend</artifactId>
@@ -57,23 +60,38 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.codehaus.sonar.sslr</groupId>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>${gson.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.sonarsource.sslr</groupId>
 			<artifactId>sslr-testing-harness</artifactId>
-			<version>1.19.2</version>
+			<version>${sslr.version}</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.6.2</version>
+		</dependency>
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.easytesting</groupId>
 			<artifactId>fest-assert</artifactId>
 			<version>1.4</version>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
@@ -87,10 +105,12 @@
 			<plugin>
 				<groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
 				<artifactId>sonar-packaging-maven-plugin</artifactId>
-				<version>1.15</version>
+				<version>1.17</version>
 				<extensions>true</extensions>
 				<configuration>
 					<pluginClass>org.sonar.samples.java.JavaDebuggingRulesPlugin</pluginClass>
+					<sonarLintSupported>true</sonarLintSupported>
+					<sonarQubeMinVersion>5.6</sonarQubeMinVersion>
 				</configuration>
 			</plugin>
 
@@ -99,8 +119,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 

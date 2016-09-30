@@ -8,7 +8,7 @@ import org.sonar.plugins.java.api.CheckRegistrar;
  *
  * This class is a batch extension by implementing the {@link org.sonar.plugins.java.api.CheckRegistrar} interface.
  */
-public class JavaDebuggingFileCheckRegistrar implements CheckRegistrar {
+public class JavaDebuggingRulesCheckRegistrar implements CheckRegistrar {
 
   /**
    * Register the classes that will be used to instantiate checks during analysis.

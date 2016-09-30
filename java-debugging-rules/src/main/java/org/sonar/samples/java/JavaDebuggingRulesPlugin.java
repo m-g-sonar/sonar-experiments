@@ -5,23 +5,21 @@
  */
 package org.sonar.samples.java;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.sonar.api.SonarPlugin;
+import org.sonar.api.Plugin;
 
 /**
  * Entry point of plugin
  */
-public class JavaDebuggingRulesPlugin extends SonarPlugin {
+public class JavaDebuggingRulesPlugin implements Plugin {
 
   @Override
-  public List getExtensions() {
-    return Arrays.asList(
-      // server extensions -> objects are instantiated during server startup
-      JavaDebuggingRulesDefinition.class,
+  public void define(Context context) {
 
-      // batch extensions -> objects are instantiated during code analysis
-      JavaDebuggingFileCheckRegistrar.class);
+    // server extensions -> objects are instantiated during server startup
+    context.addExtension(JavaDebuggingRulesDefinition.class);
+
+    // batch extensions -> objects are instantiated during code analysis
+    context.addExtension(JavaDebuggingRulesCheckRegistrar.class);
+
   }
 }

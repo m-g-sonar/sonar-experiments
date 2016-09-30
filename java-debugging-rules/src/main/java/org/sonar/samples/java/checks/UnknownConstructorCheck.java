@@ -2,21 +2,13 @@ package org.sonar.samples.java.checks;
 
 import com.google.common.collect.ImmutableList;
 
-import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.check.Rule;
 import org.sonar.plugins.java.api.tree.NewClassTree;
 import org.sonar.plugins.java.api.tree.Tree;
-import org.sonar.squidbridge.annotations.SqaleConstantRemediation;
-import org.sonar.squidbridge.annotations.SqaleSubCharacteristic;
 
 import java.util.List;
 
-@Rule(key = "UnknownConstructorCall",
-  name = "Unknown Constructor Call",
-  description = "This rule detects unknown constructors (not resolved)",
-  tags = {"debugging"})
-@SqaleSubCharacteristic(RulesDefinition.SubCharacteristics.RELIABILITY_COMPLIANCE)
-@SqaleConstantRemediation("10min")
+@Rule(key = "UnknownConstructorCall")
 public class UnknownConstructorCheck extends UnknownTypeAbstractCheck {
 
   @Override
