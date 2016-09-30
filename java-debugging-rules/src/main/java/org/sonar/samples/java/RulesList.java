@@ -3,6 +3,7 @@ package org.sonar.samples.java;
 import com.google.common.collect.ImmutableList;
 
 import org.sonar.plugins.java.api.JavaCheck;
+import org.sonar.samples.java.checks.MethodInvocationReturnTypeCheck;
 import org.sonar.samples.java.checks.UnknownConstructorCheck;
 import org.sonar.samples.java.checks.UnknownMethodCheck;
 
@@ -21,6 +22,7 @@ public final class RulesList {
     return ImmutableList.<Class<? extends JavaCheck>>builder()
       .add(UnknownMethodCheck.class)
       .add(UnknownConstructorCheck.class)
+      .add(MethodInvocationReturnTypeCheck.class)
       .build();
   }
 
