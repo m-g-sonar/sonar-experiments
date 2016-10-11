@@ -2,11 +2,7 @@ package org.sonar.samples.java.checks;
 
 import com.google.common.collect.ImmutableList;
 
-import org.apache.commons.lang.StringUtils;
 import org.sonar.check.Rule;
-import org.sonar.java.resolve.JavaType;
-import org.sonar.java.resolve.ParametrizedTypeJavaType;
-import org.sonar.java.resolve.TypeVariableJavaType;
 import org.sonar.plugins.java.api.IssuableSubscriptionVisitor;
 import org.sonar.plugins.java.api.semantic.Type;
 import org.sonar.plugins.java.api.tree.ExpressionTree;
@@ -14,7 +10,6 @@ import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
 import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 import org.sonar.plugins.java.api.tree.Tree;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Rule(key = "MethodInvocationReturnType")
@@ -39,17 +34,7 @@ public class MethodInvocationReturnTypeCheck extends IssuableSubscriptionVisitor
     if (type.isUnknown()) {
       return "Unknown";
     }
-    String result = type.toString();
-    if (type instanceof ParametrizedTypeJavaType) {
-      ParametrizedTypeJavaType ptjt = (ParametrizedTypeJavaType) type;
-      List<String> typeParams = new ArrayList<>();
-      for (TypeVariableJavaType typeVar : ptjt.typeParameters()) {
-        JavaType substituted = ptjt.substitution(typeVar);
-        typeParams.add(prettyPrint(substituted));
-      }
-      result += "<" + StringUtils.join(typeParams, ',') + ">";
-    }
-    return result;
+    return type.toString();
   }
 
 }

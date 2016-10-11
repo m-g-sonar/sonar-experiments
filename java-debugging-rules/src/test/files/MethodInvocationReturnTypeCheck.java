@@ -7,12 +7,12 @@ class A {
       .length(); // Noncompliant {{int}}
 
     new C<A>()
-      .foo()  // Noncompliant {{C<A>}}
+      .foo()  // Noncompliant
       .bar(); // Noncompliant {{A}}
 
     C<C<B[]>> cca = new C<>();
     cca
-      .foo()   // Noncompliant {{C<C<B[]>>}}
+      .foo()   // Noncompliant
       .boyo(); // Noncompliant {{Unknown}}
   }
 
