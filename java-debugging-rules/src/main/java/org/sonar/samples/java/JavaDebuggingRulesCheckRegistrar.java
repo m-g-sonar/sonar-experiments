@@ -1,6 +1,7 @@
 package org.sonar.samples.java;
 
 import org.sonar.plugins.java.api.CheckRegistrar;
+import org.sonarsource.api.sonarlint.SonarLintSide;
 
 /**
  * Provide the "checks" (implementations of rules) classes that are gonna be executed during
@@ -8,6 +9,7 @@ import org.sonar.plugins.java.api.CheckRegistrar;
  *
  * This class is a batch extension by implementing the {@link org.sonar.plugins.java.api.CheckRegistrar} interface.
  */
+@SonarLintSide
 public class JavaDebuggingRulesCheckRegistrar implements CheckRegistrar {
 
   /**
