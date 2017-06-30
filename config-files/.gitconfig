@@ -1,0 +1,16 @@
+[user]
+	name = Michael Gumowski
+	email = ...
+[core]
+	autocrlf = input
+	safecrlf = true
+	editor = vim
+[merge]
+	renameLimit = 10000
+[alias]
+	st = status
+	hist = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(cyan)%an %C(bold blue)%Creset ' --abbrev-commit
+	sh = show --pretty=\"format:\" --name-only
+	stashall = stash save -u
+[push]
+	default = simple
