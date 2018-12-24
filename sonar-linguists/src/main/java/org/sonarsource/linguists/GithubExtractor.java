@@ -85,7 +85,7 @@ public class GithubExtractor {
     organization = github.getOrganization(organizationName);
 
     for (String repositoryName : repositories) {
-      System.out.println(repositoryName + ": START");
+      System.out.println(repositoryName + ": START (" + repositories.indexOf(repositoryName) + "/" + repositories.size() + ")");
       GHRepository repository = organization.getRepository(repositoryName);
       PagedIterable<GHCommit> commits = repository.queryCommits()
         .since(dateFormat.parse("2017-01-01"))
@@ -114,6 +114,10 @@ public class GithubExtractor {
       commitsByUser.forEach((user, n) -> System.out.println(String.format("- %s (%s)", user, n)));
 
       System.out.println(repositoryName + ": DONE");
+      System.out.println();
+      System.out.print("WAITING 1min... ");
+      Thread.sleep(1000L * 60);
+      System.out.println("DONE!");
       System.out.println();
     }
 
