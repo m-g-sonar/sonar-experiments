@@ -84,12 +84,15 @@ public class GithubExtractor {
     GitHub github = GitHub.connect("m-g-sonar", "...  my token ...");
     organization = github.getOrganization(organizationName);
 
-    int counter = 0;
-
     for (String repositoryName : repositories) {
       System.out.println(repositoryName + ": START");
       GHRepository repository = organization.getRepository(repositoryName);
-      PagedIterable<GHCommit> commits = repository.queryCommits().since(dateFormat.parse("2017-01-01")).list();
+      PagedIterable<GHCommit> commits = repository.queryCommits()
+        .since(dateFormat.parse("2017-01-01"))
+        .pageSize(100)
+        .list();
+
+      int counter = 0;
       System.out.println("----------");
       for (GHCommit commit : commits.asList()) {
         collectCommits(repositoryName, commit);
@@ -101,14 +104,13 @@ public class GithubExtractor {
           }
         }
       }
-      System.out.println();
+      System.out.println(" (" + counter + ")");
       System.out.println("----------");
-      System.out.println("----> #commits: " + counter);
 
       Map<String, Integer> commitsByUser = new HashMap<>();
       results.get(repositoryName).stream().forEach(commit -> commitsByUser.compute(commit.user, (user, n) -> (n == null) ? 1 : (n + 1)));
 
-      System.out.println("----> #users:");
+      System.out.println("#Commits by users:");
       commitsByUser.forEach((user, n) -> System.out.println(String.format("- %s (%s)", user, n)));
 
       System.out.println(repositoryName + ": DONE");
@@ -151,8 +153,11 @@ public class GithubExtractor {
       return;
     }
     String name = user.getName();
+    String login = user.getLogin();
     if (name == null) {
-      name = user.getLogin();
+      name = login;
+    } else {
+      name += " (" + login + ")";
     }
     results.computeIfAbsent(repositoryName, key -> new ArrayList<>())
       .add(new Commit(repositoryName, name, role, commit.getCommitDate(), commit.getSHA1()));
