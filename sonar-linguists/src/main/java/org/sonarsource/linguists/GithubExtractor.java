@@ -10,7 +10,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,11 +23,12 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.PagedIterable;
+import org.sonarsource.linguists.data.Commit;
 
 public class GithubExtractor {
 
-  private static final String DATE_FORMAT = "yyyy-MM-dd";
-  private static final Gson GSON = new GsonBuilder()
+  public static final String DATE_FORMAT = "yyyy-MM-dd";
+  public static final Gson GSON = new GsonBuilder()
     .setPrettyPrinting()
     .setDateFormat(DATE_FORMAT)
     .create();
@@ -202,28 +202,6 @@ public class GithubExtractor {
     }
     results.computeIfAbsent(repositoryName, key -> new ArrayList<>())
       .add(new Commit(repositoryName, name, role, commit.getCommitDate(), commit.getSHA1()));
-  }
-
-  private static class Commit {
-
-    private enum Role {
-      AUTHOR,
-      COMMITTER;
-    }
-
-    final Role role;
-    final String repository;
-    final String user;
-    final Date date;
-    final String sha1;
-
-    private Commit(String repository, String user, Role role, Date date, String sha1) {
-      this.repository = repository;
-      this.user = user;
-      this.role = role;
-      this.date = date;
-      this.sha1 = sha1;
-    }
   }
 
 }
