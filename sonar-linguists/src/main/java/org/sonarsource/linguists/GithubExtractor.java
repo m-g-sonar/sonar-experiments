@@ -102,7 +102,7 @@ public class GithubExtractor {
     organization = github.getOrganization(organizationName);
 
     for (String repositoryName : repositories) {
-      logLine(repositoryName + ": START (" + repositories.indexOf(repositoryName) + "/" + repositories.size() + ")");
+      logLine(repositoryName + ": START (" + (repositories.indexOf(repositoryName) + 1) + "/" + repositories.size() + ")");
       GHRepository repository = organization.getRepository(repositoryName);
       PagedIterable<GHCommit> commits = repository.queryCommits()
         .since(dateFormat.parse("2017-01-01"))
