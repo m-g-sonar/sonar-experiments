@@ -4,15 +4,19 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import javax.annotation.Nullable;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHOrganization;
@@ -74,18 +78,24 @@ public class GithubExtractor {
   private final String organizationName;
   private final Map<String, List<Commit>> results = new HashMap<>();
 
+  private final Set<GHUser> knownUsers = new HashSet<>();
+  private final Set<GHUser> trustedUsers = new HashSet<>();
+
   private GHOrganization organization;
 
   public GithubExtractor(String organizationName) {
     this.organizationName = organizationName;
   }
 
-  private GithubExtractor collect(List<String> repositories) throws Exception {
-    GitHub github = GitHub.connect("m-g-sonar", "...  my token ...");
+  private GithubExtractor collect(List<String> repositories) throws IOException, ParseException, InterruptedException {
+    GitHub github = GitHub.connect("... my login ...", "... my token ...");
+
+    logLine("Rate Limit at START:" + github.rateLimit());
+
     organization = github.getOrganization(organizationName);
 
     for (String repositoryName : repositories) {
-      System.out.println(repositoryName + ": START (" + repositories.indexOf(repositoryName) + "/" + repositories.size() + ")");
+      logLine(repositoryName + ": START (" + repositories.indexOf(repositoryName) + "/" + repositories.size() + ")");
       GHRepository repository = organization.getRepository(repositoryName);
       PagedIterable<GHCommit> commits = repository.queryCommits()
         .since(dateFormat.parse("2017-01-01"))
@@ -93,38 +103,48 @@ public class GithubExtractor {
         .list();
 
       int counter = 0;
-      System.out.println("----------");
+      logLine("----------");
       for (GHCommit commit : commits.asList()) {
         collectCommits(repositoryName, commit);
         counter++;
         if (counter % 10 == 0) {
-          System.out.print("|");
+          log("|");
           if (counter % 100 == 0) {
-            System.out.println();
+            logLine("");
           }
         }
       }
-      System.out.println(" (" + counter + ")");
-      System.out.println("----------");
+      logLine(" (" + counter + ")");
+      logLine("----------");
 
       Map<String, Integer> commitsByUser = new HashMap<>();
       results.get(repositoryName).stream().forEach(commit -> commitsByUser.compute(commit.user, (user, n) -> (n == null) ? 1 : (n + 1)));
 
-      System.out.println("#Commits by users:");
-      commitsByUser.forEach((user, n) -> System.out.println(String.format("- %s (%s)", user, n)));
+      logLine("#Commits by users:");
+      commitsByUser.forEach((user, n) -> logLine(String.format("- %s (%s)", user, n)));
 
-      System.out.println(repositoryName + ": DONE");
-      System.out.println();
-      System.out.print("WAITING 1min... ");
-      Thread.sleep(1000L * 60);
-      System.out.println("DONE!");
-      System.out.println();
+      logLine(repositoryName + ": DONE");
+      logLine("");
+      log("WAITING 30s... ");
+      Thread.sleep(1000L * 30);
+      logLine("DONE!");
+      logLine("");
     }
+
+    logLine("Rate Limit at END:" + github.rateLimit());
 
     return this;
   }
 
-  private void collectCommits(String repositoryName, GHCommit commit) throws Exception {
+  private static void log(String text) {
+    System.out.print(text);
+  }
+
+  private static void logLine(String text) {
+    System.out.println(text);
+  }
+
+  private void collectCommits(String repositoryName, GHCommit commit) throws IOException {
     GHUser author = commit.getAuthor();
     GHUser commiter = commit.getCommitter();
 
@@ -136,8 +156,8 @@ public class GithubExtractor {
     }
   }
 
-  private void export(File resultFolder) throws Exception {
-    System.out.println("Saving Results in: " + resultFolder.getPath());
+  private void export(File resultFolder) throws IOException {
+    logLine("Saving Results in: " + resultFolder.getPath());
     Files.deleteIfExists(resultFolder.toPath());
     resultFolder.mkdir();
     results.forEach((repo, commits) -> {
@@ -146,14 +166,24 @@ public class GithubExtractor {
         byte[] strToBytes = GSON.toJson(commits).getBytes();
         outputStream.write(strToBytes);
       } catch (Exception e) {
-        System.out.println("===================== Fail to write: " + fileName);
+        logLine("===================== Fail to write: " + fileName);
       }
     });
-    System.out.println("Saving DONE");
+    logLine("Saving DONE");
   }
 
-  private void addIfMember(String repositoryName, GHCommit commit, @Nullable GHUser user, Commit.Role role) throws Exception {
-    if (user == null || !user.isMemberOf(organization)) {
+  private void addIfMember(String repositoryName, GHCommit commit, @Nullable GHUser user, Commit.Role role) throws IOException {
+    if (user == null) {
+      return;
+    }
+    if (!knownUsers.contains(user)) {
+      knownUsers.add(user);
+      // only call this API once by user
+      if (user.isMemberOf(organization)) {
+        trustedUsers.add(user);
+      }
+    }
+    if (!trustedUsers.contains(user)) {
       return;
     }
     String name = user.getName();
