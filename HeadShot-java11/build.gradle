@@ -1,0 +1,40 @@
+plugins {
+  id 'java'
+  id 'jacoco'
+  id 'org.sonarqube' version "2.8"
+  id 'eclipse' // optional (to generate Eclipse project files)
+  id 'idea' // optional (to generate IntelliJ IDEA project files)
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  testImplementation('org.junit.jupiter:junit-jupiter:5.5.2')
+}
+
+test {
+  useJUnitPlatform()
+  testLogging {
+    events "passed", "skipped", "failed"
+  }
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectName", "HeadShot-java11-gradle"
+    property "sonar.projectKey", "org.foo:HeadShot-java11-gradle"
+    property "sonar.host.url", "http://localhost:9000/"
+    property "sonar.scm.disabled", "true"
+    property "sonar.java.coveragePlugin", "jacoco"
+    property "sonar.junit.reportPaths", ["build/test-results/test"]
+    property "sonar.jacoco.reportPaths", "build/reports/jacoco/test.exec"
+  }
+}
+
+jacocoTestReport {
+  reports {
+    xml.enabled true
+  }
+}
