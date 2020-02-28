@@ -6,3 +6,4 @@
 .sonar/
 .gradle/
 .scannerwork/
+.java-version
