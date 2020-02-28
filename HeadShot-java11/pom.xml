@@ -18,7 +18,6 @@
     <jacoco.version>0.8.5</jacoco.version>
     <sonar.scm.disabled>true</sonar.scm.disabled>
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-<!--     <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths> -->
   </properties>
 
   <dependencies>
@@ -26,18 +25,6 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>23.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-core</artifactId>
-      <version>5.2.1.RELEASE</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-config</artifactId>
-      <version>5.2.1.RELEASE</version>
     </dependency>
 
     <dependency>
