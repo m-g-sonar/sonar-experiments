@@ -1,5 +1,5 @@
-# Path to your oh-my-zsh installation.
-  export ZSH=/home/mgumowski/.oh-my-zsh
+# Path to your oh-my-zsh installation.fullyQualifiedName
+export ZSH=/home/michaelgumowski/.oh-my-zsh
 
 # Set name of the theme to load.
 # Look in ~/.oh-my-zsh/themes/
@@ -49,11 +49,11 @@ ZSH_THEME="robbyrussell"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git mvn)
+plugins=(git gitfast mvn)
 
 # User configuration
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$PATH"
 # export MANPATH="/usr/local/man:$MANPATH"
 
 source $ZSH/oh-my-zsh.sh
@@ -72,7 +72,7 @@ source $ZSH/oh-my-zsh.sh
 # export ARCHFLAGS="-arch x86_64"
 
 # ssh
-# export SSH_KEY_PATH="~/.ssh/dsa_id"
+# export SSH_KEY_PATH="~/.ssh/github_rsa"
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
@@ -83,71 +83,75 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+# --------------------------------- ssh configuration ------------------------------------------------------------------
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/github_rsa
+
 # --------------------------------- usefull aliases --------------------------------------------------------------------
 alias cd..='cd ..'
 alias ls='ls -F --color --show-control-chars -als'
 
 # --------------------------------- maven related ----------------------------------------------------------------------
-alias mvn="mvn-color" #requires mvn plugin for oh-my-zsh
+export MAVEN_HOME="/usr/lib/mvn/apche-maven-3.8.1"
 alias mci='mvn clean install'
-alias mciSkipTests='mvn clean install -DskipTests'
-alias mciWithTests='mvn clean install -DskipTests=False'
-alias mvnDebug='/usr/lib/mvn/apache-maven-3.2.5/bin/mvnDebug'
+alias mciSkipTests='mci -DskipTests'
+alias mciWithTests='mci -DskipTests=False'
+
+# --------------------------------- scanner for msbuild related---------------------------------------------------------
+export SCANNER_FOR_MSBUILD="/home/michaelgumowski/sonarscanner-msbuild"
 
 # --------------------------------- git related ------------------------------------------------------------------------
-# go to git!
+export GITHUB_TOKEN='...'
+
 alias gut='git'
 alias got='gut'
 alias gti='got'
 
-alias gtg='cd ~/wks/git/'
-alias gtj="cd ~/wks/git/sonar-java/"
-alias gte="cd ~/wks/eclipse-neon/"
+# go to git!
+alias gtg='cd /home/michaelgumowski/dev/wks/git/'
+alias gtj="cd /home/michaelgumowski/dev/wks/git/sonar-java/"
+alias gths="cd /home/michaelgumowski/dev/wks/git/sonar-experiments/HeadShot-java11"
 
 alias gh='git hist'
 alias gri='git rebase --interactive'
 alias grih2='git rebase --interactive HEAD~2'
+alias grih10='git rebase --interactive HEAD~10'
+grih() {
+  gri HEAD~"$1"
+}
 alias gpr='git pull --rebase'
 alias gco='git checkout'
-# git clean branches remotes
-alias gcbr='git remote prune origin'
-# git clean branches localy
-alias gcbl='git branch --merged master | grep -v "\* master" | xargs -n 1 git branch -d'
-# git rm for all deleted files
-alias grmd='git ls-files --deleted -z | xargs -0 git rm'
-
+alias gcom='git checkout master'
+fix() {
+  git add .
+  git commit -am "fix"
+}
 # --------------------------------- work-related -----------------------------------------------------------------------
-export SONARQUBE_HOME="$HOME/app/sonarqube-6.5.0.26101"
-export SONARQUBE_LTS_HOME="$HOME/app/sonarqube-5.6.6"
-export SONARQUBE_SCANNER_HOME="$HOME/app/sonar-scanner-2.8"
-export SONARLINT_CLI="$HOME/app/sonarlint-cli-2.1.0.566"
-export ORCHESTRATOR_CONFIG_URL="file:///home/mgumowski/wks/orchestrator.properties"
-export RULE_API_VERSION="1.16"
+export SONARQUBE_LTS_7_9_VERSION="7.9.4"
+export SONARQUBE_LTS_8_9_VERSION="8.9.0.43852"
+export RULE_API_VERSION="2.1.0"
+export SONAR_SCANNER_VERSION="4.0.0.1744"
 
-export GRADLE_HOME="/usr/lib/gradle/3.5"
+export SONARQUBE_HOME="/home/michaelgumowski/dev/app/sonarqube"
+export SONARQUBE_LTS_7_9_HOME="$SONARQUBE_HOME-$SONARQUBE_LTS_7_9_VERSION"
+export SONARQUBE_LTS_8_9_HOME="$SONARQUBE_HOME-$SONARQUBE_LTS_8_9_VERSION"
+export SONARQUBE_DEFAULT_HOME="$SONARQUBE_LTS_8_9_HOME"
 
-export PATH="$SONARQUBE_SCANNER_HOME/bin:$SONARLINT_CLI/bin:$GRADLE_HOME/bin:$PATH"
+export SONARQUBE_SCANNER_HOME="/home/michaelgumowski/dev/app/sonar-scanner-$SONAR_SCANNER_VERSION"
 
-alias sq="$SONARQUBE_HOME/bin/linux-x86-64/./sonar.sh"
-alias sqLTS="$SONARQUBE_LTS_HOME/bin/linux-x86-64/./sonar.sh"
+export ORCHESTRATOR_CONFIG_URL="file:///home/michaelgumowski/dev/orchestrator.properties"
+
+alias sqLTS7="$SONARQUBE_LTS_7_9_VERSION/bin/linux-x86-64/./sonar.sh"
+alias sqLTS8="$SONARQUBE_LTS_8_9_HOME/bin/linux-x86-64/./sonar.sh"
+alias sq="$SONARQUBE_DEFAULT_HOME/bin/linux-x86-64/./sonar.sh"
 alias sonarScanner='sonar-scanner'
+
+alias yguard="java -jar /home/michaelgumowski/dev/app/yguard-2.6/lib/yguard.jar"
+
+alias ruleAPI="java -jar /home/michaelgumowski/dev/wks/git/sonar-rule-api/target/rule-api-$RULE_API_VERSION-SNAPSHOT.jar"
 
 sonarScannerDebug() {
   export SONAR_SCANNER_OPTS="-Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000" && sonar-scanner
-}
-
-sonarLintDebug() {
-  export SONARLINT_OPTS="-Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000" && sonarlint
-}
-
-ruleDoc() {
-  destPath=~/wks/git/sonar-java/java-checks/src/main/resources/org/sonar/l10n/java/rules/squid/
-  java -jar ~/wks/git/sonar-rule-api/target/rule-api-"$RULE_API_VERSION"-SNAPSHOT.jar generate -language java -directory $destPath -rule $1 
-}
-
-ruleDocUpdate() {
-  destPath=~/wks/git/sonar-java/java-checks/src/main/resources/org/sonar/l10n/java/rules/squid/
-  java -jar ~/wks/git/sonar-rule-api/target/rule-api-"$RULE_API_VERSION"-SNAPSHOT.jar update -language java -directory $destPath
 }
 
 ruling(){
@@ -158,30 +162,29 @@ ruling(){
   cd ../..
 }
 
-rulingNoPlugin(){
-  java -version
-  cd its/ruling
-  mciWithTests
-  cd ../..
+sqRestartWithNewJavaPlugin() {
+  javaPluginDirectory="/home/michaelgumowski/dev/wks/git/sonar-java/sonar-java-plugin/target/"
+  sqPluginsDirectory="$SONARQUBE_DEFAULT_HOME/lib/extensions/"
+
+  # drop java plugin from SQ
+  find $sqPluginsDirectory -type f -name 'sonar-java-plugin*.jar' -delete
+
+  # copy latest snapshot
+  find $javaPluginDirectory -type f -name 'sonar-java-plugin*SNAPSHOT.jar' -exec cp '{}' $sqPluginsDirectory \;
+
+  #sq restart
+  $SONARQUBE_DEFAULT_HOME/bin/linux-x86-64/./sonar.sh restart
 }
 
-copyRulingJson(){
-for myDir in ~/Development/SonarSource/sonar-java/its/ruling/target/actual/*
-do
-  if [ -d "$myDir" ]; then
-    if [ ! -f $myDir/squid-"$*".json ]; then
-      echo "File not found: all issues of project have been removed: "
-      rm ~/Development/SonarSource/sonar-java/its/ruling/src/test/resources/$(basename "$myDir")/squid-"$*".json
-    else
-      cp $myDir/squid-"$*".json ~/Development/SonarSource/sonar-java/its/ruling/src/test/resources/$(basename "$myDir") || echo "Cannot copy for $myDir"
-    fi
-  fi
-done
-}
-
+export PATH="$SONARQUBE_SCANNER_HOME/bin:$MAVEN_HOME/bin:$ANT_HOME/bin:$GOROOT/bin:$GOPATH/bin:$PATH"
 # --------------------------------- jenv ; SHOULD BE LAST --------------------------------------------------------------
-export PATH="$HOME/.jenv/bin:$PATH"
+
+export PATH="/home/michaelgumowski/.jenv/bin:$PATH"
 eval "$(jenv init -)"
 
 # added by travis gem
-[ -f /home/mgumowski/.travis/travis.sh ] && source /home/mgumowski/.travis/travis.sh
+[ -f /home/michaelgumowski/.travis/travis.sh ] && source /home/michaelgumowski/.travis/travis.sh
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/home/michaelgumowski/.sdkman"
+[[ -s "/home/michaelgumowski/.sdkman/bin/sdkman-init.sh" ]] && source "/home/michaelgumowski/.sdkman/bin/sdkman-init.sh"
